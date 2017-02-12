@@ -11,6 +11,8 @@ import com.sun.javacard.apduio.CadTransportException;
 
 public class Main {
 	
+	public static final byte[] APPLET_AID = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06,0x07, 0x08, 0x09, 0x00, 0x00 };
+	
 	public static void main(String[] args) {
 		try {
 			
@@ -28,7 +30,8 @@ public class Main {
 			System.out.println("Card powered up"); 	
 			
 			selectAppletInstaller(cad);
-			createApplet(cad);
+			installApplet(cad);
+			selectApplet(cad);
 			
 
 		} catch (IOException e) {
@@ -73,8 +76,8 @@ public class Main {
 		}
 	}
 	
-	public static void createApplet(CadT1Client cad){
-		// Select the installer applet
+	public static void installApplet(CadT1Client cad){
+		// Install the applet
 		Apdu apdu = new Apdu(); 
 		apdu.command[Apdu.CLA] = (byte) 0x80; 
 		apdu.command[Apdu.INS] = (byte) 0xB8; 
@@ -98,6 +101,35 @@ public class Main {
 		
 		if (apdu.getStatus() != 0x9000) { 
 			System.out.println("Error Installing applet"); 	
+			System.exit(1); 
+		}
+	}
+	
+	public static void selectApplet(CadT1Client cad){
+		// Select applet
+		Apdu apdu = new Apdu(); 
+		apdu.command[Apdu.CLA] = 0x00; 
+		apdu.command[Apdu.INS] = (byte) 0xA4; 
+		apdu.command[Apdu.P1] = 0x04; 
+		apdu.command[Apdu.P2] = 0x00;
+		
+		byte[] data = APPLET_AID;
+		apdu.setDataIn(data);
+		
+		// Sends data 
+		try {
+			cad.exchangeApdu(apdu);
+			System.out.println("Applet selected"); 	
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (CadTransportException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+		
+		if (apdu.getStatus() != 0x9000) { 
+			System.out.println("Error selecting applet"); 	
 			System.exit(1); 
 		}
 	}
