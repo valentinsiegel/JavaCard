@@ -13,6 +13,11 @@ public class Main {
 	
 	public static final byte[] APPLET_AID = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06,0x07, 0x08, 0x09, 0x00, 0x00 };
 	
+	private static final byte FIDELITE_CLA = (byte) 0xB0;
+	private static final byte INS_OBTENIR_SOLDE = (byte) 0x01;
+	private static final byte INS_AJOUTER_SOLDE = (byte) 0x02;
+	private static final byte INS_AJOUTER_SOLDE_AVEC_SOLDE = (byte) 0x03;
+	
 	public static void main(String[] args) {
 		try {
 			
@@ -32,6 +37,11 @@ public class Main {
 			selectAppletInstaller(cad);
 			installApplet(cad);
 			selectApplet(cad);
+			getAmount(cad);
+			addFundsAndGetNewAmount(cad, 10);
+			addFundsAndGetNewAmount(cad, 15);
+			
+			cad.powerDown();
 			
 
 		} catch (IOException e) {
@@ -44,7 +54,8 @@ public class Main {
 			e.printStackTrace();
 		} 
 	}
-	
+
+
 	public static void selectAppletInstaller(CadT1Client cad){
 		
 		// Select the installer applet
@@ -131,6 +142,72 @@ public class Main {
 		if (apdu.getStatus() != 0x9000) { 
 			System.out.println("Error selecting applet"); 	
 			System.exit(1); 
+		}
+	}
+	
+	public static void getAmount(CadT1Client cad){
+		
+		// return amount
+		Apdu apdu = new Apdu(); 
+		apdu.command[Apdu.CLA] = FIDELITE_CLA; 
+		apdu.command[Apdu.INS] = INS_OBTENIR_SOLDE; 
+		apdu.command[Apdu.P1] = 0x00; 
+		apdu.command[Apdu.P2] = 0x00;
+		
+		// lenght of answer
+		apdu.setLe(0x02);
+		// Sends data 
+		try {
+			cad.exchangeApdu(apdu);
+			System.out.println("Request to get amount"); 	
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (CadTransportException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+		
+		if (apdu.getStatus() != 0x9000) { 
+			System.out.println("Errror requesting amount"); 	
+			System.exit(1); 
+		} else {
+			System.out.println("Valeur : " +apdu.dataOut[0]);
+		}
+	}
+	
+	
+	private static void addFundsAndGetNewAmount(CadT1Client cad, int i) {
+
+		// Adds funds then return amount
+		Apdu apdu = new Apdu(); 
+		apdu.command[Apdu.CLA] = FIDELITE_CLA; 
+		apdu.command[Apdu.INS] = INS_AJOUTER_SOLDE_AVEC_SOLDE; 
+		apdu.command[Apdu.P1] = 0x00; 
+		apdu.command[Apdu.P2] = 0x00;
+		
+		// lenght of answer
+		apdu.setLe(0x02);
+		byte[] data = { 0x00, (byte) i };
+		apdu.setDataIn(data);
+		
+		// Sends data 
+		try {
+			cad.exchangeApdu(apdu);
+			System.out.println("Request to get amount"); 	
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (CadTransportException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+		
+		if (apdu.getStatus() != 0x9000) { 
+			System.out.println("Errror requesting amount"); 	
+			System.exit(1); 
+		} else {
+			System.out.println("Valeur : " +apdu.dataOut[1]);
 		}
 	}
 }
